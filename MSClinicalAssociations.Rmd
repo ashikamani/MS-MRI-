@@ -1,0 +1,464 @@
+---
+title: "MS Clinical Associations"
+author: "Ashika Mani"
+date: "9/26/2021"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+    number_sections: true
+    toc_depth: '3'
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Variables
+
+* T2LV_Conv - Conventional MRI T2 values
+* T2LV_Subtle - Fast MRI without AI T2 values
+* T2LV_SubtleMR - Fast MRI with AI T2 values
+* Conv, Subtle, and SubtleMR for the variables below: 
+* T1Hypo_	- T1 Hypodensity Volume 
+* TBV_ Total Brain Volume
+* CSF_ Total CSF Volume
+* ICV_ Intracranial Volume
+* LthV_ Left Thamalus Volume 
+* RthV_ Right Thalamus Volume 
+* GMV_ Total Gray Matter Volume
+* WMV_ Total White Matter Volume
+* NBV_ Normalized Brain Volume
+* NThV_ Normalized Thalamic Volume
+* NGMV_ Normalized Gray Matter Volume
+* NWMV_ Noramlized White Matter Volume
+
+For each of the above volumes we explored these predictor variables:
+
+* amb=1 if PDDS $\geq$ 4, 0 if PDDS < 4 - PDDS (discrete)
+* age - Age (at first scan) (continuous)
+* sexbin - 1 if Female, 0 if Male
+* nonhiswhite - Taken from Ethnicity and Race columns, 1 if non-hispanic european descent, 0 other
+* dur - Disease Duration (date of MRI - date of first symptoms), years (continuous)
+* types -  Taken from Clinical Type, 1 if RRMS and 0 other
+* standard - Taken from Treatment, 1 if standard efficacy, 0 if other
+* high - taken from treatment, 1 if high efficacy, 0 if other
+* PDDS - PDDS (continuous)
+* MSRS-R - MSRS-R (continuous)
+
+```{r, include = FALSE}
+library(readxl)
+library(tidyverse)
+library(skimr)
+library(knitr)
+library(tidyr)
+library(lmerTest)
+library(car)
+library(plyr)
+library(PowerTOST)
+library(interactions)
+MRIdata <- read_excel("Batch1-4_20200420.xlsx",sheet=1)
+i <- c(8:48)      
+MRIdata[ , i] <- apply(MRIdata[ , i], 2,           
+                    function(x) as.numeric(as.character(x)))
+MRIdata<-MRIdata[-c(97:124),-c(11)]
+clin <- read_excel("Subtle_metadata_updated.xls",sheet=1)
+clin$amb<-ifelse(clin$`PDDS Median`>=4, 1, 0)
+clin$sexbin<-ifelse(clin$Sex=="Female", 1, 0) #1 if female, 0 male
+clin$nonhiswhite<-ifelse((clin$Ethnicity=="Non-Hispanic" | clin$Ethnicity=="Non-hispanic")&(clin$Race=="Caucasian"), 1, 0) #1 if non-hispanic european descent, 0 other
+clin<-plyr::rename(clin, c("Age (at first scan)" = "age", "Disease Duration (date of MRI - date of first symptoms), years"="dur"))
+clin$types <- ifelse(clin[,14]==1,1,0) # 1 if RRMS and 0 other
+clin$standard <- ifelse(clin$Treatment==1|clin$Treatment==2|clin$Treatment==3|clin$Treatment==4|clin$Treatment==5|clin$Treatment==6|clin$Treatment==18|clin$Treatment==7|clin$Treatment==8|clin$Treatment==9|clin$Treatment==10|clin$Treatment==19|clin$Treatment==20|clin$Treatment==14,1,0) # 1 if standard efficacy 0 if other
+clin$high <- ifelse(clin$Treatment==16|clin$Treatment==17|clin$Treatment==15|clin$Treatment==13|clin$Treatment==11,1,0)# 1 if high efficacy 0 if other
+clinical<-merge(x =MRIdata, y = clin, by="Patient ID")
+clin_long <- gather(clinical, type, volume, T2LV_Conv:NWMV_SubtleMR, factor_key=TRUE)
+```
+
+
+# Linear model with PDDS (discrete) as a predictor variable 
+
+## T2LV
+```{r}
+T2LV <-clin_long[clin_long$type == "T2LV_Conv" | clin_long$type == "T2LV_Subtle"| clin_long$type == "T2LV_SubtleMR", ]
+T2LVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=T2LV)
+summary(T2LVmod)
+linearHypothesis(T2LVmod, c("typeT2LV_Subtle:amb"))
+linearHypothesis(T2LVmod, c("typeT2LV_SubtleMR:amb"))
+```
+
+## T1Hypo
+
+```{r}
+T1Hypo <-clin_long[clin_long$type == "T1Hypo_Conv" | clin_long$type == "T1Hypo_Subtle"| clin_long$type == "T1Hypo_SubtleMR", ]
+T1Hypomod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=T1Hypo)
+summary(T1Hypomod)
+linearHypothesis(T1Hypomod, c("typeT1Hypo_Subtle:amb"))
+linearHypothesis(T1Hypomod, c("typeT1Hypo_SubtleMR:amb"))
+```
+
+## TBV
+
+```{r}
+TBV <-clin_long[clin_long$type == "TBV_Conv" | clin_long$type == "TBV_Subtle"| clin_long$type == "TBV_SubtleMR", ]
+TBVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=TBV)
+summary(TBVmod)
+linearHypothesis(TBVmod, c("typeTBV_Subtle:amb"))
+linearHypothesis(TBVmod, c("typeTBV_SubtleMR:amb"))
+```
+
+## CSF
+
+```{r}
+CSF <-clin_long[clin_long$type == "CSF_Conv" | clin_long$type == "CSF_Subtle"| clin_long$type == "CSF_SubtleMR", ]
+CSFmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=CSF)
+summary(CSFmod)
+linearHypothesis(CSFmod, c("typeCSF_Subtle:amb"))
+linearHypothesis(CSFmod, c("typeCSF_SubtleMR:amb"))
+```
+
+## ICV
+
+```{r}
+ICV <-clin_long[clin_long$type == "ICV_Conv" | clin_long$type == "ICV_Subtle"| clin_long$type == "ICV_SubtleMR", ]
+ICVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=ICV)
+summary(ICVmod)
+linearHypothesis(ICVmod, c("typeICV_Subtle:amb"))
+linearHypothesis(ICVmod, c("typeICV_SubtleMR:amb"))
+```
+
+## LThV
+
+```{r}
+LThV <-clin_long[clin_long$type == "LThV_Conv" | clin_long$type == "LThV_Subtle"| clin_long$type == "LThV_SubtleMR", ]
+LThVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=LThV)
+summary(LThVmod)
+linearHypothesis(LThVmod, c("typeLThV_Subtle:amb"))
+linearHypothesis(LThVmod, c("typeLThV_SubtleMR:amb"))
+```
+
+## RThV
+
+```{r}
+RThV <-clin_long[clin_long$type == "RThV_Conv" | clin_long$type == "RThV_Subtle"| clin_long$type == "RThV_SubteMR", ]
+RThVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=RThV)
+summary(RThVmod)
+linearHypothesis(RThVmod, c("typeRThV_Subtle:amb"))
+linearHypothesis(RThVmod, c("typeRThV_SubteMR:amb"))
+```
+
+## GMV
+
+```{r}
+GMV <-clin_long[clin_long$type == "GMV_Conv" | clin_long$type == "GMV_Subtle"| clin_long$type == "GMV_SubtleMR", ]
+GMVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=GMV)
+summary(GMVmod)
+linearHypothesis(GMVmod, c("typeGMV_Subtle:amb"))
+linearHypothesis(GMVmod, c("typeGMV_SubtleMR:amb"))
+```
+
+## WMV
+
+```{r}
+WMV <-clin_long[clin_long$type == "WMV_Conv" | clin_long$type == "WMV_Subtle"| clin_long$type == "WMV_SubteMR", ]
+WMVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=WMV)
+summary(WMVmod)
+linearHypothesis(WMVmod, c("typeWMV_Subtle:amb"))
+linearHypothesis(WMVmod, c("typeWMV_SubteMR:amb"))
+interact_plot(WMVmod, pred = amb, modx = type)
+```
+
+
+## NBV
+
+```{r}
+NBV <-clin_long[clin_long$type == "NBV_Conv" | clin_long$type == "NBV_Subtle"| clin_long$type == "NBV_SubtleMR", ]
+NBVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=NBV)
+summary(NBVmod)
+linearHypothesis(NBVmod, c("typeNBV_Subtle:amb"))
+linearHypothesis(NBVmod, c("typeNBV_SubtleMR:amb"))
+```
+
+
+## NThV
+
+```{r}
+NThV <-clin_long[clin_long$type == "NThV_Conv" | clin_long$type == "NThV_Subtle"| clin_long$type == "NThV_SubtleMR", ]
+NThVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=NThV)
+summary(NThVmod)
+linearHypothesis(NThVmod, c("typeNThV_Subtle:amb"))
+linearHypothesis(NThVmod, c("typeNThV_SubtleMR:amb"))
+```
+
+
+## NGMV
+
+```{r}
+NGMV <-clin_long[clin_long$type == "NGMV_Conv" | clin_long$type == "NGMV_Subtle"| clin_long$type == "NGMV_SubtleMR", ]
+NGMVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=NGMV)
+summary(NGMVmod)
+linearHypothesis(NGMVmod, c("typeNGMV_Subtle:amb"))
+linearHypothesis(NGMVmod, c("typeNGMV_SubtleMR:amb"))
+```
+
+## NWMV
+
+```{r}
+NWMV <-clin_long[clin_long$type == "NWMV_Conv" | clin_long$type == "NWMV_Subtle"| clin_long$type == "NWMV_SubtleMR", ]
+NWMVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=NWMV)
+summary(NWMVmod)
+linearHypothesis(NWMVmod, c("typeNWMV_Subtle:amb"))
+linearHypothesis(NWMVmod, c("typeNWMV_SubtleMR:amb"))
+```
+
+# Linear model with PDDS (continuous) as a predictor variable 
+
+## T2LV
+
+```{r}
+T2LVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=T2LV)
+summary(T2LVmod2)
+linearHypothesis(T2LVmod2, c("typeT2LV_Subtle:`PDDS Median`"))
+linearHypothesis(T2LVmod2, c("typeT2LV_SubtleMR:`PDDS Median`"))
+```
+
+## T1Hypo
+
+```{r}
+T1Hypomod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=T1Hypo)
+summary(T1Hypomod2)
+linearHypothesis(T1Hypomod2, c("typeT1Hypo_Subtle:`PDDS Median`"))
+linearHypothesis(T1Hypomod2, c("typeT1Hypo_SubtleMR:`PDDS Median`"))
+```
+
+
+## TBV
+
+```{r}
+TBVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=TBV)
+summary(TBVmod2)
+linearHypothesis(TBVmod2, c("typeTBV_Subtle:`PDDS Median`"))
+linearHypothesis(TBVmod2, c("typeTBV_SubtleMR:`PDDS Median`"))
+```
+
+## CSF
+
+```{r}
+CSFmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=CSF)
+summary(CSFmod2)
+linearHypothesis(CSFmod2, c("typeCSF_Subtle:`PDDS Median`"))
+linearHypothesis(CSFmod2, c("typeCSF_SubtleMR:`PDDS Median`"))
+interact_plot(CSFmod2, pred = `PDDS Median`, modx = type)
+```
+
+## ICV
+
+```{r}
+ICVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=ICV)
+summary(ICVmod2)
+linearHypothesis(ICVmod2, c("typeICV_Subtle:`PDDS Median`"))
+linearHypothesis(ICVmod2, c("typeICV_SubtleMR:`PDDS Median`"))
+```
+
+## LThV
+
+```{r}
+LThVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=LThV)
+summary(LThVmod2)
+linearHypothesis(LThVmod2, c("typeLThV_Subtle:`PDDS Median`"))
+linearHypothesis(LThVmod2, c("typeLThV_SubtleMR:`PDDS Median`"))
+```
+
+## RThV
+
+```{r}
+RThVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=RThV)
+summary(RThVmod2)
+linearHypothesis(RThVmod2, c("typeRThV_Subtle:`PDDS Median`"))
+linearHypothesis(RThVmod2, c("typeRThV_SubteMR:`PDDS Median`"))
+```
+
+## GMV
+
+```{r}
+GMVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=GMV)
+summary(GMVmod2)
+linearHypothesis(GMVmod2, c("typeGMV_Subtle:`PDDS Median`"))
+linearHypothesis(GMVmod2, c("typeGMV_SubtleMR:`PDDS Median`"))
+```
+
+## WMV
+
+```{r}
+WMVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=WMV)
+summary(WMVmod2)
+linearHypothesis(WMVmod2, c("typeWMV_Subtle:`PDDS Median`"))
+linearHypothesis(WMVmod2, c("typeWMV_SubteMR:`PDDS Median`"))
+```
+
+## NBV
+
+```{r}
+NBVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=NBV)
+summary(NBVmod2)
+linearHypothesis(NBVmod2, c("typeNBV_Subtle:`PDDS Median`"))
+linearHypothesis(NBVmod2, c("typeNBV_SubtleMR:`PDDS Median`"))
+interact_plot(NBVmod2, pred = `PDDS Median`, modx = type)
+```
+
+
+## NThV
+
+```{r}
+NThVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=NThV)
+summary(NThVmod2)
+linearHypothesis(NThVmod2, c("typeNThV_Subtle:`PDDS Median`"))
+linearHypothesis(NThVmod2, c("typeNThV_SubtleMR:`PDDS Median`"))
+interact_plot(NThVmod2, pred = `PDDS Median`, modx = type)
+```
+
+## NGMV
+
+```{r}
+NGMVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=NGMV)
+summary(NGMVmod2)
+linearHypothesis(NGMVmod2, c("typeNGMV_Subtle:`PDDS Median`"))
+linearHypothesis(NGMVmod2, c("typeNGMV_SubtleMR:`PDDS Median`"))
+interact_plot(NGMVmod2, pred = `PDDS Median`, modx = type)
+```
+
+## NWMV
+
+```{r}
+NWMVmod2 <-lmer( volume ~ type * `PDDS Median` + age+ sexbin + nonhiswhite + dur + types + standard+high + (1 | `Patient ID`) , data=NWMV)
+summary(NWMVmod2)
+linearHypothesis(NWMVmod2, c("typeNWMV_Subtle:`PDDS Median`"))
+linearHypothesis(NWMVmod2, c("typeNWMV_SubtleMR:`PDDS Median`"))
+interact_plot(NWMVmod2, pred = `PDDS Median`, modx = type)
+```
+
+# Linear model with MSRS-R as a predictor variable 
+
+## T2LV
+
+```{r,echo=FALSE}
+T2LVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=T2LV)
+summary(T2LVmsrsmod)
+linearHypothesis(T2LVmsrsmod, c("typeT2LV_Subtle:`MSRS-R Median`"))
+linearHypothesis(T2LVmsrsmod, c("typeT2LV_SubtleMR:`MSRS-R Median`"))
+```
+
+## T1Hypo
+
+```{r,echo=FALSE}
+T1Hypomsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=T1Hypo)
+summary(T1Hypomsrsmod)
+linearHypothesis(T1Hypomsrsmod, c("typeT1Hypo_Subtle:`MSRS-R Median`"))
+linearHypothesis(T1Hypomsrsmod, c("typeT1Hypo_SubtleMR:`MSRS-R Median`"))
+```
+
+## TBV
+
+```{r,echo=FALSE}
+TBVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=TBV)
+summary(TBVmsrsmod)
+linearHypothesis(TBVmsrsmod, c("typeTBV_Subtle:`MSRS-R Median`"))
+linearHypothesis(TBVmsrsmod, c("typeTBV_SubtleMR:`MSRS-R Median`"))
+```
+
+## CSF
+
+```{r,echo=FALSE}
+CSFmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=CSF)
+summary(CSFmsrsmod)
+linearHypothesis(CSFmsrsmod, c("typeCSF_Subtle:`MSRS-R Median`"))
+linearHypothesis(CSFmsrsmod, c("typeCSF_SubtleMR:`MSRS-R Median`"))
+```
+
+## ICV
+
+```{r,echo=FALSE}
+ICVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=ICV)
+summary(ICVmsrsmod)
+linearHypothesis(ICVmsrsmod, c("typeICV_Subtle:`MSRS-R Median`"))
+linearHypothesis(ICVmsrsmod, c("typeICV_SubtleMR:`MSRS-R Median`"))
+```
+
+## LThV
+
+```{r,echo=FALSE}
+LThVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=LThV)
+summary(LThVmsrsmod)
+linearHypothesis(LThVmsrsmod, c("typeLThV_Subtle:`MSRS-R Median`"))
+linearHypothesis(LThVmsrsmod, c("typeLThV_SubtleMR:`MSRS-R Median`"))
+```
+
+## RThV
+
+```{r,echo=FALSE}
+RThVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=RThV)
+summary(RThVmsrsmod)
+linearHypothesis(RThVmsrsmod, c("typeRThV_Subtle:`MSRS-R Median`"))
+linearHypothesis(RThVmsrsmod, c("typeRThV_SubteMR:`MSRS-R Median`"))
+interact_plot(RThVmsrsmod, pred = `MSRS-R Median`, modx = type)
+```
+
+## GMV
+
+```{r,echo=FALSE}
+GMVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=GMV)
+summary(GMVmsrsmod)
+linearHypothesis(GMVmsrsmod, c("typeGMV_Subtle:`MSRS-R Median`"))
+linearHypothesis(GMVmsrsmod, c("typeGMV_SubtleMR:`MSRS-R Median`"))
+```
+
+## WMV
+
+```{r,echo=FALSE}
+WMVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=WMV)
+summary(WMVmsrsmod)
+linearHypothesis(WMVmsrsmod, c("typeWMV_Subtle:`MSRS-R Median`"))
+linearHypothesis(WMVmsrsmod, c("typeWMV_SubteMR:`MSRS-R Median`"))
+```
+
+
+## NBV
+
+```{r,echo=FALSE}
+NBVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=NBV)
+summary(NBVmsrsmod)
+linearHypothesis(NBVmsrsmod, c("typeNBV_Subtle:`MSRS-R Median`"))
+linearHypothesis(NBVmsrsmod, c("typeNBV_SubtleMR:`MSRS-R Median`"))
+interact_plot(NBVmsrsmod,pred = `MSRS-R Median`, modx = type)
+```
+
+## NThV
+
+```{r,echo=FALSE}
+NThVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=NThV)
+summary(NThVmsrsmod)
+linearHypothesis(NThVmsrsmod, c("typeNThV_Subtle:`MSRS-R Median`"))
+linearHypothesis(NThVmsrsmod, c("typeNThV_SubtleMR:`MSRS-R Median`"))
+interact_plot(NThVmsrsmod,`MSRS-R Median`,type)
+```
+
+
+## NGMV
+
+```{r,echo=FALSE}
+NGMVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=NGMV)
+summary(NGMVmsrsmod)
+linearHypothesis(NGMVmsrsmod, c("typeNGMV_Subtle:`MSRS-R Median`"))
+linearHypothesis(NGMVmsrsmod, c("typeNGMV_SubtleMR:`MSRS-R Median`"))
+```
+
+
+## NWMV
+
+```{r,echo=FALSE}
+NWMVmsrsmod <-lmer( volume ~ type * `MSRS-R Median` + age+ sexbin + nonhiswhite + dur + types+ standard+high + (1 | `Patient ID`) , data=NWMV)
+summary(NWMVmsrsmod)
+linearHypothesis(NWMVmsrsmod, c("typeNWMV_Subtle:`MSRS-R Median`"))
+linearHypothesis(NWMVmsrsmod, c("typeNWMV_SubtleMR:`MSRS-R Median`"))
+```
