@@ -176,6 +176,7 @@ interact_plot(WMVmod, pred = amb, modx = type)
 NBV <-clin_long[clin_long$type == "NBV_Conv" | clin_long$type == "NBV_Subtle"| clin_long$type == "NBV_SubtleMR", ]
 NBVmod <-lmer( volume ~ type * amb + age+ sexbin + nonhiswhite + dur + types + standard+high +(1 | `Patient ID`) , data=NBV)
 summary(NBVmod)
+
 linearHypothesis(NBVmod, c("typeNBV_Subtle:amb"))
 linearHypothesis(NBVmod, c("typeNBV_SubtleMR:amb"))
 ```
@@ -462,3 +463,21 @@ summary(NWMVmsrsmod)
 linearHypothesis(NWMVmsrsmod, c("typeNWMV_Subtle:`MSRS-R Median`"))
 linearHypothesis(NWMVmsrsmod, c("typeNWMV_SubtleMR:`MSRS-R Median`"))
 ```
+
+
+```{r}
+NBVconv <- NBV[NBV$type=='NBV_Conv',]
+NBVsub <- NBV[NBV$type=='NBV_Subtle',]
+cor.test(NBVconv$volume,NBVconv$`PDDS Median`)
+cor.test(NBVconv$volume,NBVconv$`MSRS-R Median`)
+NThVconv <- NThV[NThV$type=='NThV_Conv',]
+cor.test(NThVconv$volume,NThVconv$`PDDS Median`)
+cor.test(NThVconv$volume,NThVconv$`MSRS-R Median`)
+NGMVconv <- NGMV[NGMV$type=='NGMV_Conv',]
+cor.test(NGMVconv$volume,NGMVconv$`PDDS Median`)
+cor.test(NGMVconv$volume,NGMVconv$`MSRS-R Median`)
+NWMVconv <- NWMV[NWMV$type=='NWMV_Conv',]
+cor.test(NWMVconv$volume,NWMVconv$`PDDS Median`)
+cor.test(NWMVconv$volume,NWMVconv$`MSRS-R Median`)
+```
+

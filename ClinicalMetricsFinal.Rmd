@@ -11,6 +11,7 @@ library(skimr)
 library(knitr)
 library(equivalence)
 library(pastecs)
+library(pwr)
 MRIdata <- read_excel("Batch1-4_20200420.xlsx",sheet=1)
 i <- c(8:48)      
 MRIdata[ , i] <- apply(MRIdata[ , i], 2,            # Specify own function within apply
@@ -190,6 +191,66 @@ median(MRIdata$NWMV_SubtleMR, na.rm = TRUE)
 IQR(MRIdata$NWMV_SubtleMR, na.rm = TRUE)
 ```
 
+```{r}
+((mean(MRIdata$NBV_Subtle, na.rm = TRUE) - mean(MRIdata$NBV_Conv, na.rm = TRUE))/ mean(MRIdata$NBV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NBV_Subtle, na.rm = TRUE) - mean(MRIdata$NBV_Conv, na.rm = TRUE)
+((mean(MRIdata$NThV_Subtle, na.rm = TRUE) - mean(MRIdata$NThV_Conv, na.rm = TRUE))/mean(MRIdata$NThV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NThV_Subtle, na.rm = TRUE) - mean(MRIdata$NThV_Conv, na.rm = TRUE)
+((mean(MRIdata$NGMV_Subtle, na.rm = TRUE) - mean(MRIdata$NGMV_Conv, na.rm = TRUE))/mean(MRIdata$NGMV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NGMV_Subtle, na.rm = TRUE) - mean(MRIdata$NGMV_Conv, na.rm = TRUE)
+((mean(MRIdata$NWMV_Subtle, na.rm = TRUE) - mean(MRIdata$NWMV_Conv, na.rm = TRUE))/mean(MRIdata$NWMV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NWMV_Subtle, na.rm = TRUE) - mean(MRIdata$NWMV_Conv, na.rm = TRUE)
+
+((mean(MRIdata$T2LV_SubtleMR, na.rm = TRUE) - mean(MRIdata$T2LV_Conv, na.rm = TRUE))/ mean(MRIdata$T2LV_Conv, na.rm = TRUE)) * 100
+(mean(MRIdata$T2LV_SubtleMR, na.rm = TRUE) - mean(MRIdata$T2LV_Conv, na.rm = TRUE))
+
+((mean(MRIdata$NBV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NBV_Conv, na.rm = TRUE))/ mean(MRIdata$NBV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NBV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NBV_Conv, na.rm = TRUE)
+
+((mean(MRIdata$NThV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NThV_Conv, na.rm = TRUE))/mean(MRIdata$NThV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NThV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NThV_Conv, na.rm = TRUE)
+
+((mean(MRIdata$NGMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NGMV_Conv, na.rm = TRUE))/mean(MRIdata$NGMV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NGMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NGMV_Conv, na.rm = TRUE)
+
+((mean(MRIdata$NWMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NWMV_Conv, na.rm = TRUE))/mean(MRIdata$NWMV_Conv, na.rm = TRUE)) * 100
+mean(MRIdata$NWMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NWMV_Conv, na.rm = TRUE)
+
+((mean(MRIdata$T2LV_SubtleMR, na.rm = TRUE) - mean(MRIdata$T2LV_Subtle, na.rm = TRUE))/ mean(MRIdata$T2LV_Subtle, na.rm = TRUE)) * 100
+(mean(MRIdata$T2LV_SubtleMR, na.rm = TRUE) - mean(MRIdata$T2LV_Subtle, na.rm = TRUE))
+
+((mean(MRIdata$NBV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NBV_Subtle, na.rm = TRUE))/ mean(MRIdata$NBV_Subtle, na.rm = TRUE)) * 100
+abs(mean(MRIdata$NBV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NBV_Subtle, na.rm = TRUE))
+
+((mean(MRIdata$NThV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NThV_Subtle, na.rm = TRUE))/mean(MRIdata$NThV_Subtle, na.rm = TRUE)) * 100
+mean(MRIdata$NThV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NThV_Subtle, na.rm = TRUE)
+
+((mean(MRIdata$NGMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NGMV_Subtle, na.rm = TRUE))/mean(MRIdata$NGMV_Subtle, na.rm = TRUE)) * 100
+mean(MRIdata$NGMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NGMV_Subtle, na.rm = TRUE)
+
+((mean(MRIdata$NWMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NWMV_Subtle, na.rm = TRUE))/mean(MRIdata$NWMV_Subtle, na.rm = TRUE)) * 100
+mean(MRIdata$NWMV_SubtleMR, na.rm = TRUE) - mean(MRIdata$NWMV_Subtle, na.rm = TRUE)
+```
+
+```{r}
+boxplot(MRIdata$NBV_Conv)$out
+boxplot(MRIdata$NThV_Conv)$out
+boxplot(MRIdata$NGMV_Conv)$out
+boxplot(MRIdata$NWMV_Conv)$out
+
+boxplot(MRIdata$NBV_Subtle)$out
+boxplot(MRIdata$NThV_Subtle)$out
+boxplot(MRIdata$NGMV_Subtle)$out
+boxplot(MRIdata$NWMV_Subtle)$out
+
+boxplot(MRIdata$NBV_SubtleMR)$out
+boxplot(MRIdata$NThV_SubtleMR)$out
+boxplot(MRIdata$NGMV_SubtleMR)$out
+boxplot(MRIdata$NWMV_SubtleMR)$out
+```
+
+
+
 Paired t-tests for NBV
 ```{r}
 t.test(MRIdata$NBV_Subtle,MRIdata$NBV_Conv, paired=TRUE)
@@ -240,52 +301,35 @@ mean(MRIdata$NWMV_SubtleMR-MRIdata$NWMV_Subtle,na.rm=TRUE)
 sd(MRIdata$NWMV_SubtleMR-MRIdata$NWMV_Subtle,na.rm=TRUE)
 ```
 
+T2LV
+```{r}
+t.test(MRIdata$T2LV_Subtle,MRIdata$T2LV_Conv, paired=TRUE)
+mean(MRIdata$T2LV_Subtle-MRIdata$T2LV_Conv,na.rm=TRUE)
+sd(MRIdata$T2LV_Subtle-MRIdata$T2LV_Conv,na.rm=TRUE)
+t.test(MRIdata$T2LV_SubtleMR,MRIdata$T2LV_Conv, paired=TRUE)
+mean(MRIdata$T2LV_SubtleMR-MRIdata$T2LV_Conv,na.rm=TRUE)
+sd(MRIdata$T2LV_SubtleMR-MRIdata$T2LV_Conv,na.rm=TRUE)
+t.test(MRIdata$T2LV_SubtleMR,MRIdata$T2LV_Subtle, paired=TRUE)
+mean(MRIdata$T2LV_SubtleMR-MRIdata$T2LV_Subtle,na.rm=TRUE)
+sd(MRIdata$T2LV_SubtleMR-MRIdata$T2LV_Subtle,na.rm=TRUE)
+```
 
-<!-- ```{r} -->
-<!-- p1 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NBV_Conv)) + scale_x_continuous(name = "Conventional") -->
-<!-- p2 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NBV_Subtle)) + scale_x_continuous(name = "Fast") -->
-<!-- p3 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NBV_SubtleMR)) + scale_x_continuous(name = "Fast with DL") -->
-<!-- p1 -->
-<!-- p2 -->
-<!-- p3 -->
-<!-- ``` -->
+```{r}
+ES.t.paired(md = -748.7241 , sd =2603.505, n = 29, t =-1.5487, se = NULL,
+df = 28, alternative = "two.sided")
+pwr.t.test(d=0.2875831,power=0.8,sig.level=0.05,type="paired",alternative="two.sided")
+
+ES.t.paired(md = -591.6485 , sd =3039.31, n = 30, t =-1.0662, se = NULL,
+df = 29, alternative = "two.sided")
+pwr.t.test(d=0.1946654,power=0.8,sig.level=0.05,type="paired",alternative="two.sided")
+
+ES.t.paired(md = 120.8205, sd =2596.767, n = 29, t =0.25056, se = NULL,
+df = 28, alternative = "two.sided")
+pwr.t.test(d=0.04652728,power=0.8,sig.level=0.05,type="paired",alternative="two.sided")
+
+pwr.t.test(n=30, d=0.2875831,sig.level=0.05,type="paired",alternative="two.sided")
+pwr.t.test(n=30, d=0.1946654,sig.level=0.05,type="paired",alternative="two.sided")
+pwr.t.test(n=30, d=0.04652728,sig.level=0.05,type="paired",alternative="two.sided")
+```
 
 
-<!-- ```{r} -->
-<!-- p1 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NThV_Conv)) + scale_x_continuous(name = "Conventional") -->
-<!-- p2 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NThV_Subtle)) + scale_x_continuous(name = "Fast") -->
-<!-- p3 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NThV_SubtleMR)) + scale_x_continuous(name = "Fast with DL") -->
-<!-- p1 -->
-<!-- p2 -->
-<!-- p3 -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- p1 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NGMV_Conv)) + scale_x_continuous(name = "Conventional") -->
-<!-- p2 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NGMV_Subtle)) + scale_x_continuous(name = "Fast") -->
-<!-- p3 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NGMV_SubtleMR)) + scale_x_continuous(name = "Fast with DL") -->
-<!-- p1 -->
-<!-- p2 -->
-<!-- p3 -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- p1 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NWMV_Conv)) + scale_x_continuous(name = "Conventional") -->
-<!-- p2 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NWMV_Subtle)) + scale_x_continuous(name = "Fast") -->
-<!-- p3 = ggplot(data=MRIdata) + -->
-<!--   geom_histogram(aes(x=NWMV_SubtleMR)) + scale_x_continuous(name = "Fast with DL") -->
-<!-- p1 -->
-<!-- p2 -->
-<!-- p3 -->
-<!-- ``` -->
